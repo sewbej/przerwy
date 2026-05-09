@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rejestracja przerw</title>
+    <title>Rejestr przerw</title>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
@@ -33,7 +33,7 @@
 </head>
 <body>
 
-    <h3>Rejestracja przerw</h3>
+    <h3>Rejestr przerw</h3>
 
     <div id="reader"></div>
 
@@ -170,7 +170,7 @@
             XLSX.utils.book_append_sheet(workbook, worksheet, "Raport");
 
             const now = new Date();
-            const fileName = `Raport_${now.toLocaleDateString()}_${now.toLocaleTimeString()}.xlsx`.replace(/[:]/g, '-');
+            const fileName = `Rejestr_przerw_${now.toLocaleDateString()}_${now.toLocaleTimeString()}.xlsx`.replace(/[:]/g, '-');
             XLSX.writeFile(workbook, fileName);
         });
 
