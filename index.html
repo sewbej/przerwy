@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skaner Wyjść i Powrotów</title>
+    <!-- Biblioteka do obsługi aparatu i skanowania kodów -->
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <!-- Biblioteka do generowania plików Excel (.xlsx) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 15px; max-width: 500px; margin: auto; background-color: #f9f9f9; }
+        h2 { text-align: center; color: #333; }
+        #reader { width: 100%; border-radius: 8px; overflow: hidden; background: #fff; }
+        .hidden { display: none !important; }
+        .section { margin-top: 15px; padding: 20px; background: #fff; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .data-row { margin-bottom: 10px; font-size: 1.1em; }
+        .highlight { font-weight: bold; color: #0056b3; font-size: 1.2em; }
+        
+        label { font-weight: bold; display: block; margin-top: 15px; margin-bottom: 5px; }
+        select { width: 100%; padding: 12px; font-size: 16px; border: 1px solid #ccc; border-radius: 5px; background: #fff; }
+        
+        button { width: 100%; padding: 15px; margin-top: 12px; font-size: 16px; font-weight: bold; border: none; border-radius: 5px; cursor: pointer; transition: 0.2s; }
+        button:active { opacity: 0.8; }
+        
+        #saveBtn { background-color: #007bff; color: white; }
+        #cancelBtn { background-color: #e2e6ea; color: #333; margin-top: 8px; }
+        #reportBtn { background-color: #28a745; color: white; margin-top: 30px; }
+        #clearBtn { background-color: #dc3545; color: white; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <h2>Skaner Wyjść/Powrotów</h2>
+
+    <!-- Miejsce, gdzie pojawia się podgląd z kamery -->
+    <div id="reader"></div>
+
+    <!-- Ukryty formularz pokazywany po zeskanowaniu kodu -->
+    <div id="action-section" class="section hidden">
+        <div class="data-row">Wynik: <span id="result-display" class="highlight"></span></div>
+        <div class="data-row">Godzina: <span id="time-display" class="highlight"></span></div>
+        
+        <label for="status">Określ typ skanowania:</label>
+        <select id="status">
+            <option value="wyjście">Wyjście</option>
+            <option value="powrót">Powrót</option>
+        </select>
+        
+        <button id="saveBtn">Zapisz do pamięci</button>
+        <button id="cancelBtn">Anuluj i skanuj ponownie</button>
+    </div>
+
+    <!-- Przyciski na samym dole -->
+    <div class="section" id="bottom-controls">
+        <button id="reportBtn">Wygeneruj raport EXCEL</button>
+        <button id="clearBtn">Wyczyść dane z pamięci</button>
+    </div>
+
+    <script>
+        let html5QrcodeScanner;
+        let currentCode = "";
+        let currentTime = "";
+
+        // Funkcja uruchamiająca aparat
+        function startScanner() {
+            document.getElementById('action-section').classList.add('hidden');
+            document.getElementById('bottom-controls').classList.remove('hidden');
+            
+            // Konfiguracja skanera
+            html5QrcodeScanner = new Html5QrcodeScanner(
+                "reader", 
+                { fps: 10, qrbox: {width: 250, height: 250} },
+                false
+            );
+            html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+        }
+
+        // Co się dzieje po pomyślnym zeskanowaniu
+        function onScanSuccess(decodedText, decodedResult) {
+            // Wyłączamy skaner, żeby zatrzymać kamerę i pokazać formularz
+            html5QrcodeScanner.clear();
+
+            currentCode = decodedText;
+            
+            // Pobranie aktualnej godziny w formacie GG:MM:SS
+            const now = new Date();
+            currentTime = now.toLocaleTimeString('pl-PL');
+
+            // Wyświetlenie danych pod oknem (w formularzu)
+            document.getElementById('result-display').innerText = currentCode;
+            document.getElementById('time-display').innerText = currentTime;
+            
+            // Pokazanie formularza i ukrycie dolnych przycisków na czas zapisu
+            document.getElementById('action-section').classList.remove('hidden');
+            document.getElementById('bottom-controls').classList.add('hidden');
+        }
+
+        // Ignorowanie błędów szukania kodu w tle
+        function onScanFailure(error) {}
+
+        // --- OBSŁUGA ZAPISU DO PAMIĘCI (localStorage) ---
+        document.getElementById('saveBtn').addEventListener('click', () => {
+            const status = document.getElementById('status').value;
+            
+            // Pobieramy dane z pamięci (jeśli są) i zamieniamy z tekstu na obiekt JS
+            let records = JSON.parse(localStorage.getItem('skanerBaza')) || {};
+
+            // Jeśli dany kod pojawia się pierwszy raz, tworzymy dla niego wiersz
+            if (!records[currentCode]) {
+                records[currentCode] = { wyjscie: "", powrot: "" };
+            }
+
+            // Przypisanie zeskanowanej godziny do właściwej kolumny (wyjście lub powrót)
+            if (status === "wyjście") {
+                records[currentCode].wyjscie = currentTime;
+            } else if (status === "powrót") {
+                records[currentCode].powrot = currentTime;
+            }
+
+            // Zapisz z powrotem do pamięci przeglądarki
+            localStorage.setItem('skanerBaza', JSON.stringify(records));
+            
+            alert(`Zapisano!\nKod: ${currentCode}\nTyp: ${status}\nGodzina: ${currentTime}`);
+            
+            // Wracamy do skanowania
+            startScanner();
+        });
+
+        // Przycisk Anuluj (gdy zeskanowano coś przypadkiem)
+        document.getElementById('cancelBtn').addEventListener('click', () => {
+            startScanner();
+        });
+
+        // --- OBSŁUGA EXCELA ---
+        document.getElementById('reportBtn').addEventListener('click', () => {
+            let records = JSON.parse(localStorage.getItem('skanerBaza'));
+            
+            if (!records || Object.keys(records).length === 0) {
+                alert("Baza jest pusta. Najpierw musisz zeskanować i zapisać kody!");
+                return;
+            }
+
+            // Przygotowanie tablicy pod Excela (układ kolumn A, B, C)
+            let excelData = [];
+            for (let code in records) {
+                excelData.push({
+                    "Wynik skanowania": code,
+                    "Godzina skanowania WYJŚCIE": records[code].wyjscie,
+                    "Godzina skanowania POWRÓT": records[code].powrot
+                });
+            }
+
+            // Utworzenie obiektu arkusza i skoroszytu używając biblioteki SheetJS
+            const worksheet = XLSX.utils.json_to_sheet(excelData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Raport");
+
+            // Formatowanie nazwy pliku z datą i godziną
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('pl-PL').replace(/\./g, '-'); // Format: DD-MM-YYYY
+            const timeStr = now.toLocaleTimeString('pl-PL').replace(/:/g, '-'); // Format: GG-MM-SS
+            const fileName = `Raport_${dateStr}_${timeStr}.xlsx`;
+
+            // Rozpoczęcie pobierania pliku Excel na telefon/komputer
+            XLSX.writeFile(workbook, fileName);
+        });
+
+        // --- OBSŁUGA CZYSZCZENIA PAMIĘCI ---
+        document.getElementById('clearBtn').addEventListener('click', () => {
+            if (confirm("UWAGA! Czy na pewno chcesz skasować WSZYSTKIE zapisane kody i godziny? Tej operacji nie cofniesz.")) {
+                localStorage.removeItem('skanerBaza');
+                alert("Pamięć przeglądarki została wyczyszczona.");
+            }
+        });
+
+        // Uruchom aparat automatycznie po załadowaniu strony
+        window.onload = startScanner;
+    </script>
+</body>
+</html>

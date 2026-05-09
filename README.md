@@ -1,2 +1,2 @@
-# przerwy
-Skaner Wyjść/Powrotów
+# dostawy
+dostawy - skaner
