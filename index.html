@@ -3,31 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Skaner Logów z Licznikiem Czasu</title>
+    <title>Inteligentny Skaner Czasu</title>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; padding: 15px; max-width: 500px; margin: auto; background-color: #f4f7f6; }
-        h2 { text-align: center; color: #2c3e50; }
-        #reader { width: 100%; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        body { font-family: 'Segoe UI', sans-serif; padding: 15px; max-width: 500px; margin: auto; background-color: #f0f2f5; }
+        h2 { text-align: center; color: #1a73e8; }
+        #reader { width: 100%; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.15); background: white; }
         .hidden { display: none !important; }
-        .section { margin-top: 15px; padding: 20px; background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        .data-row { margin-bottom: 10px; font-size: 1.1em; color: #34495e; }
-        .highlight { font-weight: bold; color: #2980b9; }
+        .section { margin-top: 15px; padding: 20px; background: #fff; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); text-align: center; }
+        .data-row { margin-bottom: 12px; font-size: 1.2em; color: #3c4043; }
+        .highlight { font-weight: bold; color: #1a73e8; }
+        .status-badge { display: inline-block; padding: 5px 15px; border-radius: 20px; font-weight: bold; margin-top: 10px; }
+        .status-exit { background: #e8f0fe; color: #1967d2; }
+        .status-return { background: #e6f4ea; color: #137333; }
         
-        label { font-weight: bold; display: block; margin-top: 15px; margin-bottom: 8px; color: #7f8c8d; }
-        select { width: 100%; padding: 12px; font-size: 16px; border: 2px solid #bdc3c7; border-radius: 8px; background: white; }
-        
-        button { width: 100%; padding: 15px; margin-top: 12px; font-size: 16px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: 0.3s; }
-        #saveBtn { background-color: #2ecc71; color: white; }
-        #cancelBtn { background-color: #bdc3c7; color: white; }
-        #reportBtn { background-color: #3498db; color: white; margin-top: 30px; }
-        #clearBtn { background-color: #e74c3c; color: white; }
+        button { width: 100%; padding: 16px; margin-top: 12px; font-size: 16px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: 0.2s; }
+        #saveBtn { background-color: #1a73e8; color: white; box-shadow: 0 2px 6px rgba(26,115,232,0.4); }
+        #cancelBtn { background-color: #f1f3f4; color: #3c4043; }
+        #reportBtn { background-color: #34a853; color: white; margin-top: 30px; }
+        #clearBtn { background-color: #ea4335; color: white; margin-top: 10px; opacity: 0.8; }
     </style>
 </head>
 <body>
 
-    <h2>Rejestrator Czasu Pracy</h2>
+    <h2>Skaner Automatyczny</h2>
 
     <div id="reader"></div>
 
@@ -35,25 +35,23 @@
         <div class="data-row">Kod: <span id="result-display" class="highlight"></span></div>
         <div class="data-row">Godzina: <span id="time-display" class="highlight"></span></div>
         
-        <label for="status">Określ status:</label>
-        <select id="status">
-            <option value="wyjście">WYJŚCIE (Nowy wiersz)</option>
-            <option value="powrót">POWRÓT (Dopisanie do wyjścia)</option>
-        </select>
+        <!-- System sam informuje co wykrył -->
+        <div id="detected-action" class="status-badge"></div>
         
-        <button id="saveBtn">Zapisz do pamięci</button>
-        <button id="cancelBtn">Anuluj / Skanuj ponownie</button>
+        <button id="saveBtn">Zatwierdź i zapisz</button>
+        <button id="cancelBtn">Anuluj</button>
     </div>
 
     <div class="section" id="bottom-controls">
-        <button id="reportBtn">Wygeneruj raport EXCEL (z czasem)</button>
-        <button id="clearBtn">Wyczyść dane z pamięci</button>
+        <button id="reportBtn">Pobierz raport EXCEL</button>
+        <button id="clearBtn">Wyczyść pamięć</button>
     </div>
 
     <script>
         let html5QrcodeScanner;
         let currentCode = "";
         let currentFullDate = null;
+        let isReturnAction = false;
 
         function startScanner() {
             document.getElementById('action-section').classList.add('hidden');
@@ -68,87 +66,80 @@
         function onScanSuccess(decodedText) {
             html5QrcodeScanner.clear();
             currentCode = decodedText;
-            currentFullDate = new Date(); // Zapisujemy pełny obiekt daty dla obliczeń
+            currentFullDate = new Date();
+            
+            // LOGIKA AUTOMATYCZNEGO WYKRYWANIA
+            let logs = JSON.parse(localStorage.getItem('skanerInteligentny')) || [];
+            
+            // Szukamy ostatniego wpisu dla tego kodu
+            let lastEntry = [...logs].reverse().find(log => log.kod === currentCode);
+            
+            const badge = document.getElementById('detected-action');
+            
+            // Jeśli istnieje wpis i nie ma powrotu -> to jest POWRÓT
+            if (lastEntry && lastEntry.powrotRaw === null) {
+                isReturnAction = true;
+                badge.innerText = "WYKRYTO: POWRÓT";
+                badge.className = "status-badge status-return";
+            } else {
+                // W przeciwnym razie to nowe WYJŚCIE
+                isReturnAction = false;
+                badge.innerText = "WYKRYTO: NOWE WYJŚCIE";
+                badge.className = "status-badge status-exit";
+            }
 
             document.getElementById('result-display').innerText = currentCode;
             document.getElementById('time-display').innerText = currentFullDate.toLocaleTimeString('pl-PL');
-            
             document.getElementById('action-section').classList.remove('hidden');
             document.getElementById('bottom-controls').classList.add('hidden');
         }
 
-        // --- ZAPIS DANYCH ---
         document.getElementById('saveBtn').addEventListener('click', () => {
-            const status = document.getElementById('status').value;
-            let logs = JSON.parse(localStorage.getItem('skanerLogiCzasowe')) || [];
+            let logs = JSON.parse(localStorage.getItem('skanerInteligentny')) || [];
 
-            if (status === "wyjście") {
-                logs.push({
-                    kod: currentCode,
-                    wyjscieRaw: currentFullDate.toISOString(), // Przechowujemy jako tekst ISO do łatwego odtworzenia daty
-                    wyjscieFormat: currentFullDate.toLocaleTimeString('pl-PL'),
-                    powrotRaw: null,
-                    powrotFormat: ""
-                });
-                alert("Zarejestrowano wyjście.");
-            } 
-            else if (status === "powrót") {
-                let found = false;
+            if (isReturnAction) {
+                // Znajdź ten konkretny wiersz w oryginalnej tablicy i go zaktualizuj
                 for (let i = logs.length - 1; i >= 0; i--) {
                     if (logs[i].kod === currentCode && logs[i].powrotRaw === null) {
                         logs[i].powrotRaw = currentFullDate.toISOString();
                         logs[i].powrotFormat = currentFullDate.toLocaleTimeString('pl-PL');
-                        found = true;
-                        alert("Dopisano powrót do wiersza.");
                         break;
                     }
                 }
-
-                if (!found) {
-                    logs.push({
-                        kod: currentCode,
-                        wyjscieRaw: null,
-                        wyjscieFormat: "",
-                        powrotRaw: currentFullDate.toISOString(),
-                        powrotFormat: currentFullDate.toLocaleTimeString('pl-PL')
-                    });
-                    alert("Nie znaleziono otwartego wyjścia. Utworzono nowy wpis.");
-                }
+            } else {
+                // Dodaj nowy wiersz (Wyjście)
+                logs.push({
+                    kod: currentCode,
+                    wyjscieRaw: currentFullDate.toISOString(),
+                    wyjscieFormat: currentFullDate.toLocaleTimeString('pl-PL'),
+                    powrotRaw: null,
+                    powrotFormat: ""
+                });
             }
 
-            localStorage.setItem('skanerLogiCzasowe', JSON.stringify(logs));
+            localStorage.setItem('skanerInteligentny', JSON.stringify(logs));
             startScanner();
         });
 
         document.getElementById('cancelBtn').addEventListener('click', startScanner);
 
-        // --- OBLICZANIE RÓŻNICY CZASU ---
+        // OBLICZANIE CZASU TRWANIA
         function calculateDuration(startISO, endISO) {
             if (!startISO || !endISO) return "";
-            
             const start = new Date(startISO);
             const end = new Date(endISO);
-            let diffMs = end - start; // Różnica w milisekundach
-
-            if (diffMs < 0) return "Błąd daty";
-
-            let diffSeconds = Math.floor(diffMs / 1000);
-            let hours = Math.floor(diffSeconds / 3600);
-            let minutes = Math.floor((diffSeconds % 3600) / 60);
-            let seconds = diffSeconds % 60;
-
-            // Formatowanie do postaci HH:MM:SS
-            return [hours, minutes, seconds]
-                .map(v => v < 10 ? "0" + v : v)
-                .join(":");
+            let diffMs = end - start;
+            let diffSec = Math.floor(diffMs / 1000);
+            let h = Math.floor(diffSec / 3600);
+            let m = Math.floor((diffSec % 3600) / 60);
+            let s = diffSec % 60;
+            return [h, m, s].map(v => v < 10 ? "0" + v : v).join(":");
         }
 
-        // --- GENEROWANIE RAPORTU EXCEL ---
         document.getElementById('reportBtn').addEventListener('click', () => {
-            let logs = JSON.parse(localStorage.getItem('skanerLogiCzasowe'));
-            
+            let logs = JSON.parse(localStorage.getItem('skanerInteligentny'));
             if (!logs || logs.length === 0) {
-                alert("Baza danych jest pusta.");
+                alert("Brak danych.");
                 return;
             }
 
@@ -161,19 +152,17 @@
 
             const worksheet = XLSX.utils.json_to_sheet(excelData);
             const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "Raport Czasowy");
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Logi");
 
             const now = new Date();
-            const timestamp = now.toLocaleDateString('pl-PL') + "_" + now.toLocaleTimeString('pl-PL');
-            const fileName = `Raport_${timestamp.replace(/[:.]/g, '-')}.xlsx`;
-
+            const fileName = `Raport_${now.toLocaleDateString()}_${now.toLocaleTimeString()}.xlsx`.replace(/[:]/g, '-');
             XLSX.writeFile(workbook, fileName);
         });
 
         document.getElementById('clearBtn').addEventListener('click', () => {
-            if (confirm("Czy na pewno skasować całą historię i obliczenia?")) {
-                localStorage.removeItem('skanerLogiCzasowe');
-                alert("Pamięć wyczyszczona.");
+            if (confirm("Wyczyścić całą pamięć?")) {
+                localStorage.removeItem('skanerInteligentny');
+                alert("Pamięć pusta.");
             }
         });
 
