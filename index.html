@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Skaner Logów Parowanych</title>
+    <title>Skaner Logów z Licznikiem Czasu</title>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
@@ -27,18 +27,18 @@
 </head>
 <body>
 
-    <h2>System Wyjść i Powrotów</h2>
+    <h2>Rejestrator Czasu Pracy</h2>
 
     <div id="reader"></div>
 
     <div id="action-section" class="section hidden">
-        <div class="data-row">Zczytany kod: <span id="result-display" class="highlight"></span></div>
-        <div class="data-row">Czas skanu: <span id="time-display" class="highlight"></span></div>
+        <div class="data-row">Kod: <span id="result-display" class="highlight"></span></div>
+        <div class="data-row">Godzina: <span id="time-display" class="highlight"></span></div>
         
         <label for="status">Określ status:</label>
         <select id="status">
             <option value="wyjście">WYJŚCIE (Nowy wiersz)</option>
-            <option value="powrót">POWRÓT (Dopisz do wyjścia)</option>
+            <option value="powrót">POWRÓT (Dopisanie do wyjścia)</option>
         </select>
         
         <button id="saveBtn">Zapisz do pamięci</button>
@@ -46,14 +46,14 @@
     </div>
 
     <div class="section" id="bottom-controls">
-        <button id="reportBtn">Wygeneruj raport EXCEL</button>
+        <button id="reportBtn">Wygeneruj raport EXCEL (z czasem)</button>
         <button id="clearBtn">Wyczyść dane z pamięci</button>
     </div>
 
     <script>
         let html5QrcodeScanner;
         let currentCode = "";
-        let currentTime = "";
+        let currentFullDate = null;
 
         function startScanner() {
             document.getElementById('action-section').classList.add('hidden');
@@ -68,78 +68,100 @@
         function onScanSuccess(decodedText) {
             html5QrcodeScanner.clear();
             currentCode = decodedText;
-            const now = new Date();
-            currentTime = now.toLocaleTimeString('pl-PL');
+            currentFullDate = new Date(); // Zapisujemy pełny obiekt daty dla obliczeń
 
             document.getElementById('result-display').innerText = currentCode;
-            document.getElementById('time-display').innerText = currentTime;
+            document.getElementById('time-display').innerText = currentFullDate.toLocaleTimeString('pl-PL');
             
             document.getElementById('action-section').classList.remove('hidden');
             document.getElementById('bottom-controls').classList.add('hidden');
         }
 
-        // --- GŁÓWNA LOGIKA ZAPISU ---
+        // --- ZAPIS DANYCH ---
         document.getElementById('saveBtn').addEventListener('click', () => {
             const status = document.getElementById('status').value;
-            let logs = JSON.parse(localStorage.getItem('skanerLogiParowane')) || [];
+            let logs = JSON.parse(localStorage.getItem('skanerLogiCzasowe')) || [];
 
             if (status === "wyjście") {
-                // Zawsze dodajemy nowy wiersz dla Wyjścia
                 logs.push({
                     kod: currentCode,
-                    wyjscie: currentTime,
-                    powrot: ""
+                    wyjscieRaw: currentFullDate.toISOString(), // Przechowujemy jako tekst ISO do łatwego odtworzenia daty
+                    wyjscieFormat: currentFullDate.toLocaleTimeString('pl-PL'),
+                    powrotRaw: null,
+                    powrotFormat: ""
                 });
-                alert("Zapisano nowe wyjście.");
+                alert("Zarejestrowano wyjście.");
             } 
             else if (status === "powrót") {
-                // Szukamy ostatniego wpisu dla tego kodu, który nie ma jeszcze powrotu
                 let found = false;
                 for (let i = logs.length - 1; i >= 0; i--) {
-                    if (logs[i].kod === currentCode && logs[i].powrot === "") {
-                        logs[i].powrot = currentTime;
+                    if (logs[i].kod === currentCode && logs[i].powrotRaw === null) {
+                        logs[i].powrotRaw = currentFullDate.toISOString();
+                        logs[i].powrotFormat = currentFullDate.toLocaleTimeString('pl-PL');
                         found = true;
-                        alert("Dopisano powrót do istniejącego wiersza.");
+                        alert("Dopisano powrót do wiersza.");
                         break;
                     }
                 }
 
-                // Jeśli nie znaleziono pasującego wyjścia, twórz nowy wiersz (żeby nie zgubić danych)
                 if (!found) {
                     logs.push({
                         kod: currentCode,
-                        wyjscie: "",
-                        powrot: currentTime
+                        wyjscieRaw: null,
+                        wyjscieFormat: "",
+                        powrotRaw: currentFullDate.toISOString(),
+                        powrotFormat: currentFullDate.toLocaleTimeString('pl-PL')
                     });
                     alert("Nie znaleziono otwartego wyjścia. Utworzono nowy wpis.");
                 }
             }
 
-            localStorage.setItem('skanerLogiParowane', JSON.stringify(logs));
+            localStorage.setItem('skanerLogiCzasowe', JSON.stringify(logs));
             startScanner();
         });
 
         document.getElementById('cancelBtn').addEventListener('click', startScanner);
 
+        // --- OBLICZANIE RÓŻNICY CZASU ---
+        function calculateDuration(startISO, endISO) {
+            if (!startISO || !endISO) return "";
+            
+            const start = new Date(startISO);
+            const end = new Date(endISO);
+            let diffMs = end - start; // Różnica w milisekundach
+
+            if (diffMs < 0) return "Błąd daty";
+
+            let diffSeconds = Math.floor(diffMs / 1000);
+            let hours = Math.floor(diffSeconds / 3600);
+            let minutes = Math.floor((diffSeconds % 3600) / 60);
+            let seconds = diffSeconds % 60;
+
+            // Formatowanie do postaci HH:MM:SS
+            return [hours, minutes, seconds]
+                .map(v => v < 10 ? "0" + v : v)
+                .join(":");
+        }
+
         // --- GENEROWANIE RAPORTU EXCEL ---
         document.getElementById('reportBtn').addEventListener('click', () => {
-            let logs = JSON.parse(localStorage.getItem('skanerLogiParowane'));
+            let logs = JSON.parse(localStorage.getItem('skanerLogiCzasowe'));
             
             if (!logs || logs.length === 0) {
                 alert("Baza danych jest pusta.");
                 return;
             }
 
-            // Mapowanie obiektów na format Excel (Kolumny A, B, C)
             const excelData = logs.map(log => ({
                 "Wynik skanowania": log.kod,
-                "Godzina skanowania wyjście": log.wyjscie,
-                "Godzina skanowania powrót": log.powrot
+                "Godzina skanowania wyjście": log.wyjscieFormat,
+                "Godzina skanowania powrót": log.powrotFormat,
+                "Czas trwania (GG:MM:SS)": calculateDuration(log.wyjscieRaw, log.powrotRaw)
             }));
 
             const worksheet = XLSX.utils.json_to_sheet(excelData);
             const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "Raport");
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Raport Czasowy");
 
             const now = new Date();
             const timestamp = now.toLocaleDateString('pl-PL') + "_" + now.toLocaleTimeString('pl-PL');
@@ -149,8 +171,8 @@
         });
 
         document.getElementById('clearBtn').addEventListener('click', () => {
-            if (confirm("Czy na pewno skasować historię?")) {
-                localStorage.removeItem('skanerLogiParowane');
+            if (confirm("Czy na pewno skasować całą historię i obliczenia?")) {
+                localStorage.removeItem('skanerLogiCzasowe');
                 alert("Pamięć wyczyszczona.");
             }
         });
