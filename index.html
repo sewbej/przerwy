@@ -170,7 +170,7 @@
             XLSX.utils.book_append_sheet(workbook, worksheet, "Raport");
 
             const now = new Date();
-            const fileName = `Raport_${now.toLocaleDateString()}_${now.toLocaleTimeString()}.xlsx`.replace(/[:.]/g, '-');
+            const fileName = `Raport_${now.toLocaleDateString()}_${now.toLocaleTimeString()}.xlsx`.replace(/[:]/g, '-');
             XLSX.writeFile(workbook, fileName);
         });
 
