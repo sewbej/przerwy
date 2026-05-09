@@ -99,11 +99,11 @@
             
             if (lastEntry && lastEntry.powrotRaw === null) {
                 isReturnAction = true;
-                badge.innerText = "WYKRYTO: POWRÓT";
+                badge.innerText = "POWRÓT";
                 badge.className = "status-badge status-return";
             } else {
                 isReturnAction = false;
-                badge.innerText = "WYKRYTO: NOWE WYJŚCIE";
+                badge.innerText = "WYJŚCIE";
                 badge.className = "status-badge status-exit";
             }
 
@@ -159,10 +159,10 @@
             }
 
             const excelData = logs.map(log => ({
-                "Wynik skanowania": log.kod,
-                "Godzina skanowania wyjście": log.wyjscieFormat,
-                "Godzina skanowania powrót": log.powrotFormat,
-                "Czas trwania (GG:MM:SS)": calculateDuration(log.wyjscieRaw, log.powrotRaw)
+                "Imię i Nazwisko": log.kod,
+                "wyjście": log.wyjscieFormat,
+                "powrót": log.powrotFormat,
+                "Czas trwania": calculateDuration(log.wyjscieRaw, log.powrotRaw)
             }));
 
             const worksheet = XLSX.utils.json_to_sheet(excelData);
