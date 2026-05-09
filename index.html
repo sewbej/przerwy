@@ -49,7 +49,7 @@
 
     <!-- Panel dolny z raportem i licznikiem -->
     <div class="section" id="bottom-controls">
-        <button id="reportBtn">Pobierz raport EXCEL</button>
+        <button id="reportBtn">Pobierz rejestr EXCEL</button>
         
         <div id="counter-display">Ilość wpisów: <span id="row-count">0</span></div>
         <button id="clearBtn">Wyczyść całą pamięć</button>
@@ -154,7 +154,7 @@
         document.getElementById('reportBtn').addEventListener('click', () => {
             let logs = JSON.parse(localStorage.getItem('skanerInteligentny'));
             if (!logs || logs.length === 0) {
-                alert("Brak danych do raportu.");
+                alert("Brak danych w rejestrze.");
                 return;
             }
 
@@ -167,7 +167,7 @@
 
             const worksheet = XLSX.utils.json_to_sheet(excelData);
             const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "Raport");
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Rejestr");
 
             const now = new Date();
             const fileName = `Rejestr_przerw_${now.toLocaleDateString()}_${now.toLocaleTimeString()}.xlsx`.replace(/[:]/g, '-');
