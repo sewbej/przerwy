@@ -28,7 +28,7 @@
         .has-data { color: #1a73e8 !important; font-weight: bold; }
 
         #clearBtn { background-color: #ea4335; color: white; margin-top: 8px; opacity: 0.8; }
-        button:active { transform: scale(0.8); }
+        button:active { transform: scale(0.9); }
     </style>
 </head>
 <body>
@@ -39,7 +39,7 @@
 
     <!-- Panel po zeskanowaniu -->
     <div id="action-section" class="section hidden">
-        <div class="data-row">Kod: <span id="result-display" class="highlight"></span></div>
+        <div class="data-row"><span id="result-display" class="highlight"></span></div>
         <div class="data-row">Godzina: <span id="time-display" class="highlight"></span></div>
         <div id="detected-action" class="status-badge"></div>
         
@@ -175,10 +175,9 @@
         });
 
         document.getElementById('clearBtn').addEventListener('click', () => {
-            if (confirm("Czy na pewno wyczyścić całą pamięć? Wszystkie wiersze zostaną usunięte.")) {
+            if (confirm("Czy na pewno wyczyścić całą pamięć? Wszystkie wpisy zostaną usunięte.")) {
                 localStorage.removeItem('skanerInteligentny');
                 updateRowCounter();
-                alert("Pamięć została wyczyszczona.");
             }
         });
 
