@@ -1,0 +1,2 @@
+# przerwy
+Skaner Wyjść/Powrotów
