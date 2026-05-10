@@ -33,7 +33,7 @@
 </head>
 <body>
 
-    <h2>REJESTR PRZERW</h2>
+    <h2>REJESTR PRZERW2</h2>
 
     <div id="reader"></div>
 
@@ -75,16 +75,17 @@
                 displayElement.classList.remove('has-data');
             }
         }
-
+        const config = { 
+            fps: 15, 
+            qrbox: { width: 280, height: 120 },
+            aspectRatio: 1.0
+        };
         function startScanner() {
             document.getElementById('action-section').classList.add('hidden');
             document.getElementById('bottom-controls').classList.remove('hidden');
             updateRowCounter();
             
-            html5QrCode = new html5QrCode(
-                "reader", { fps: 10, qrbox: 250 }, false
-            );
-            html5QrCode.render(onScanSuccess);
+html5QrCode.start({ facingMode: "environment" }, config, (text) => {
         }
 
         function onScanSuccess(decodedText) {
