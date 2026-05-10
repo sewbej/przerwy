@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rejestr przerw</title>
-    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="html5-qrcode.min.js" type="text/javascript"></script>
+    <script src="xlsx.full.min.js"></script>
     <style>
         body { font-family: 'Segoe UI', sans-serif; padding: 15px; max-width: 500px; margin: auto; background-color: #f0f2f5; }
-        h3 { text-align: center; color: #111111; }
+        h2 { text-align: center; color: #111111; }
         #reader { width: 100%; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.15); background: white; }
         .hidden { display: none !important; }
         .section { margin-top: 15px; padding: 20px; background: #fff; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); text-align: center; }
@@ -33,7 +33,7 @@
 </head>
 <body>
 
-    <h3>Rejestr przerw</h3>
+    <h2>REJESTR PRZERW</h2>
 
     <div id="reader"></div>
 
@@ -56,7 +56,7 @@
     </div>
 
     <script>
-        let html5QrcodeScanner;
+        let html5QrCode;
         let currentCode = "";
         let currentFullDate = null;
         let isReturnAction = false;
@@ -81,14 +81,14 @@
             document.getElementById('bottom-controls').classList.remove('hidden');
             updateRowCounter();
             
-            html5QrcodeScanner = new Html5QrcodeScanner(
+            html5QrCode = new html5QrCode(
                 "reader", { fps: 10, qrbox: 250 }, false
             );
-            html5QrcodeScanner.render(onScanSuccess);
+            html5QrCode.render(onScanSuccess);
         }
 
         function onScanSuccess(decodedText) {
-            html5QrcodeScanner.clear();
+            html5QrCode.clear();
             currentCode = decodedText;
             currentFullDate = new Date();
             
