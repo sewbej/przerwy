@@ -88,7 +88,7 @@
 
         // Funkcja aktualizująca licznik wierszy
         function updateRowCounter() {
-            const logs = JSON.parse(localStorage.getItem('skanerInteligentny')) || [];
+            const logs = JSON.parse(localStorage.getItem('rejestratorPrzerw')) || [];
             const countElement = document.getElementById('row-count');
             const displayElement = document.getElementById('counter-display');
             
@@ -123,7 +123,7 @@
             currentCode = decodedText;
             currentFullDate = new Date();
             
-            let logs = JSON.parse(localStorage.getItem('skanerInteligentny')) || [];
+            let logs = JSON.parse(localStorage.getItem('rejestratorPrzerw')) || [];
             
             // Znajdź ostatni wpis dla tego kodu
             let lastEntry = [...logs].reverse().find(log => log.kod === currentCode);
@@ -168,7 +168,7 @@
         }
 
         document.getElementById('saveBtn').addEventListener('click', () => {
-            let logs = JSON.parse(localStorage.getItem('skanerInteligentny')) || [];
+            let logs = JSON.parse(localStorage.getItem('rejestratorPrzerw')) || [];
 
             if (isReturnAction) {
                 for (let i = logs.length - 1; i >= 0; i--) {
@@ -188,7 +188,7 @@
                 });
             }
 
-            localStorage.setItem('skanerInteligentny', JSON.stringify(logs));
+            localStorage.setItem('rejestratorPrzerw', JSON.stringify(logs));
             startScanner();
         });
 
@@ -204,7 +204,7 @@
         }
 
         document.getElementById('reportBtn').addEventListener('click', () => {
-            let logs = JSON.parse(localStorage.getItem('skanerInteligentny'));
+            let logs = JSON.parse(localStorage.getItem('rejestratorPrzerw'));
             if (!logs || logs.length === 0) {
                 alert("Brak danych w rejestrze.");
                 return;
@@ -231,14 +231,14 @@
 
         document.getElementById('clearBtn').addEventListener('click', () => {
             if (confirm("Czy na pewno wyczyścić rejestr? Wszystkie wpisy zostaną usunięte.")) {
-                localStorage.removeItem('skanerInteligentny');
+                localStorage.removeItem('rejestratorPrzerw');
                 updateRowCounter();
             }
         });
 
         // --- Obsługa przycisku "Podgląd danych" ---
         document.getElementById('previewBtn').addEventListener('click', () => {
-            let logs = JSON.parse(localStorage.getItem('skanerInteligentny')) || [];
+            let logs = JSON.parse(localStorage.getItem('rejestratorPrzerw')) || [];
             
             document.getElementById('reader').classList.add('hidden');
             document.getElementById('bottom-controls').classList.add('hidden');
