@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rejestr przerw</title>
+    <title>Przerwy</title>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <script src="xlsx.full.min.js"></script>
     <style>
@@ -61,12 +61,12 @@
         <!-- Nowa sekcja: Indywidualny podgląd -->
         <div id="personal-preview-container"></div>
         
-        <button id="saveBtn">Zatwierdź</button>
+        <button id="saveBtn">ZATWIERDŹ</button>
     </div>
 
     <!-- Panel dolny z raportem, podglądem i licznikiem -->
     <div class="section" id="bottom-controls">
-        <div id="counter-display">Ilość wpisów: <span id="row-count">0</span></div>
+        <div id="counter-display">ilość wpisów: <span id="row-count">0</span></div>
         <button id="previewBtn">PODLGLĄD DANYCH</button>
         <button id="reportBtn">ZAPISZ REJESTR</button>
         <button id="clearBtn">WYCZYŚĆ REJESTR</button>
@@ -74,7 +74,7 @@
 
     <!-- Panel podglądu danych (domyślnie ukryty) -->
     <div id="preview-section" class="section hidden">
-        <h3 style="text-align: center; margin-top: 0;">Aktualne wpisy</h3>
+        <h3 style="text-align: center; margin-top: 0;">aktualne wpisy</h3>
         <div id="preview-table-container"></div>
         <button id="closePreviewBtn">ZAMKNIJ PODGLĄD</button>
     </div>
@@ -210,7 +210,7 @@
             }
 
             const excelData = logs.map(log => ({
-                "Imię i Nazwisko": log.kod,
+                "imię i nazwisko": log.kod,
                 "wyjście": log.wyjscieFormat,
                 "powrót": log.powrotFormat,
                 "czas trwania": calculateDuration(log.wyjscieRaw, log.powrotRaw)
@@ -229,7 +229,7 @@
         });
 
         document.getElementById('clearBtn').addEventListener('click', () => {
-            if (confirm("Czy na pewno wyczyścić całą pamięć? Wszystkie wpisy zostaną usunięte.")) {
+            if (confirm("Czy na pewno wyczyścić rejestr? Wszystkie wpisy zostaną usunięte.")) {
                 localStorage.removeItem('skanerInteligentny');
                 updateRowCounter();
             }
@@ -243,7 +243,7 @@
             document.getElementById('bottom-controls').classList.add('hidden');
             document.getElementById('preview-section').classList.remove('hidden');
 
-            let html = '<table><tr><th>Imię i Nazwisko</th><th>Czas trwania</th></tr>';
+            let html = '<table><tr><th>imię i nazwisko</th><th>czas trwania</th></tr>';
 
             if (logs.length === 0) {
                 html += '<tr><td colspan="2" style="text-align:center;">Brak wpisów</td></tr>';
@@ -253,7 +253,7 @@
                 sortedLogs.forEach(log => {
                     let duration = calculateDuration(log.wyjscieRaw, log.powrotRaw);
                     if (!log.powrotRaw) {
-                        duration = '<span class="status-in-progress">W trakcie</span>';
+                        duration = '<span class="status-in-progress">w trakcie</span>';
                     }
                     html += `<tr><td>${log.kod}</td><td>${duration}</td></tr>`;
                 });
