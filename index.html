@@ -224,7 +224,7 @@
             const fileName = `Rejestr_przerw_${now.toLocaleDateString()}_${now.toLocaleTimeString()}.xlsx`.replace(/[:]/g, '-');
             if(confirm(`Plik zostanie zapisany w folderze "Pobrane" (Downloads).\nNazwa pliku:\n${fileName}`)) {
 
-            XLSX.writeFile(workbook, filename);
+            XLSX.writeFile(workbook, fileName);
             }
         });
 
