@@ -6,18 +6,18 @@
     <title>Przerwy</title>
     <link rel="shortcut icon" href="https://sewbej.github.io/przerwy/pause.png">
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-    <script src="xlsx.full.min.js"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; padding: 15px; max-width: 500px; margin: auto; background-color: #f0f2f5; }
+        body { font-family: 'Segoe UI', sans-serif; padding: 0px 15px; max-width: 500px; margin: auto; background-color: #f0f2f5; }
         h2 { text-align: center; color: #111111; }
         #reader { width: 100%; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.15); background: white; }
         .hidden { display: none !important; }
-        .section { margin-top: 15px; padding: 20px; background: #fff; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); text-align: center; }
+        .section { margin-top: 6px; padding: 6px; background: #fff; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); text-align: center; }
         .data-row { margin-bottom: 12px; font-size: 1.3em; color: #3c4043; }
         .highlight { font-weight: bold; color: #111111; }
         .status-badge { display: inline-block; padding: 5px 15px; border-radius: 20px; font-weight: bold; margin-top: 10px; font-size: 22px}
         .status-exit { background: #e8f0fe; color: #1967d2; }
         .status-return { background: #e6f4ea; color: #137333; }
+        .time-overlimit { color: #ea4335 !important; font-weight: bold; }
         
         button { width: 100%; padding: 16px; margin-top: 12px; font-size: 22px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: 0.2s; }
         #saveBtn { background-color: #1a73e8; color: white; box-shadow: 0 2px 6px rgba(26,115,232,0.4); }
@@ -35,7 +35,7 @@
             border-radius: 8px;
         }
         table { width: 100%; border-collapse: collapse; font-size: 1.0em; text-align: left; }
-        th, td { border: 1px solid #ddd; padding: 6px; text-align: left; }
+        th, td { border: 1px solid #ddd; padding: 2px; text-align: left; }
         th { background-color: #f2f2f2; color: #333; position: sticky; top: 0; }
         .status-in-progress { color: #ea4335; font-weight: bold; font-size: 0.9em; }
 
@@ -108,12 +108,13 @@
 
                 sortedEmployees.forEach(employee => {
                     let timeDisplay = formatTotalTime(summary[employee].seconds);
+                    let overlimitClass = summary[employee].seconds > 2400 ? 'class="time-overlimit"' : '';
                     
                     if (summary[employee].inProgress) {
-                        timeDisplay += ' <span class="status-in-progress">PRZERWA</span>';
+                        timeDisplay += ' <span class="status-in-progress" style="font-size: 0.7em">PRZERWA</span>';
                     }
 
-                    html += `<tr><td>${employee}</td><td><strong>${timeDisplay}</strong></td></tr>`;
+                    html += `<tr><td>${employee.replace(/[0-9]/g, '')}</td><td ${overlimitClass} style="font-size: 1.3em"><strong>${timeDisplay}</strong></td></tr>`;
                 });
             }
             html += '</table>';
@@ -128,7 +129,7 @@
             
             if (!html5QrcodeScanner) {
                 html5QrcodeScanner = new Html5QrcodeScanner(
-                    "reader", { fps: 10, qrbox: 250 }, false
+                    "reader", { fps: 20, qrbox: 250 }, false
                 );
                 html5QrcodeScanner.render(onScanSuccess);
             }
@@ -240,7 +241,7 @@
             let h = Math.floor(totalSeconds / 3600);
             let m = Math.floor((totalSeconds % 3600) / 60);
             let s = totalSeconds % 60;
-            return [h, m, s].map(v => v < 10 ? "0" + v : v).join(":");
+            return [m, s].map(v => v < 10 ? "0" + v : v).join(":");
         }
 
         document.getElementById('clearBtn').addEventListener('click', () => {
