@@ -1,2 +1,2 @@
-# dostawy
-dostawy - skaner
+# przerwy
+rejestrator przerw - skaner
